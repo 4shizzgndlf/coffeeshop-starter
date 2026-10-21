@@ -1,0 +1,2 @@
+# Keep files that don't belong on the web server out of the image
+**/.DS_Store

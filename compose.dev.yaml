@@ -1,0 +1,31 @@
+# Development: Docker runs MySQL, Nginx and Caddy, Spring Boot runs in your IDE.
+#
+#   docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+#
+# Then start CoffeeShopApplication in your IDE and open http://localhost:8088.
+# Ports are bound to 127.0.0.1, so only your own machine can reach them.
+
+services:
+
+  db:
+    ports:
+      # Spring Boot in your IDE connects to localhost:3306
+      - "127.0.0.1:3306:3306"
+
+  frontend:
+    volumes:
+      # Serve the files straight from your working copy instead of the copy in
+      # the image: edit frontend/src, save, reload the browser - no rebuild needed.
+      - ./frontend/src:/usr/share/nginx/html:ro
+
+  caddy:
+    ports:
+      # http://localhost:8088
+      - "127.0.0.1:8088:80"
+    environment:
+      # Send /api/ to Spring Boot in your IDE, on port 8080 of your machine
+      API_UPSTREAM: host.docker.internal:8080
+    extra_hosts:
+      # Makes host.docker.internal mean "my machine" on Linux too
+      # (Docker Desktop on Mac and Windows already knows it)
+      - "host.docker.internal:host-gateway"

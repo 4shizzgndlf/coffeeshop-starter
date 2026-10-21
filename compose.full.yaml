@@ -1,0 +1,42 @@
+# Everything in Docker: MySQL, Spring Boot, Nginx and Caddy.
+#
+#   docker compose -f compose.yaml -f compose.full.yaml up -d --build
+#
+# Open http://localhost:8088. Caddy reaches Spring Boot as "api" and Nginx as
+# "frontend" through Docker's DNS. Only Caddy has a published port.
+#
+# The frontend runs from its image here: rebuild (--build) after changing frontend/src.
+
+services:
+
+  api:
+    # Built from coffeeshop-api/Dockerfile. --build rebuilds it after code changes.
+    build:
+      context: ./coffeeshop-api
+    image: coffeeshop-api:local
+    restart: unless-stopped
+    environment:
+      # Use application.properties plus application-docker.properties
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USERNAME: ${DB_USERNAME:-coffeeshop}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    depends_on:
+      # Wait until MySQL accepts connections, not just until its container has started
+      db:
+        condition: service_healthy
+    healthcheck:
+      # Spring Boot Actuator answers {"status":"UP"} once the application is ready
+      # (curl is installed in the image for this, see coffeeshop-api/Dockerfile)
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  caddy:
+    ports:
+      # http://localhost:8088
+      - "127.0.0.1:8088:80"
+    depends_on:
+      api:
+        condition: service_healthy

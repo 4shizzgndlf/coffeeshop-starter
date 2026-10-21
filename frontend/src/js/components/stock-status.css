@@ -1,0 +1,18 @@
+/* stock-status.css */
+
+.stock-status {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stock-status[data-level="ok"] {
+  color: var(--success-text);
+}
+
+.stock-status[data-level="low"] {
+  color: var(--warning-text);
+}
+
+.stock-status[data-level="out"] {
+  color: var(--muted);
+}

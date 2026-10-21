@@ -1,0 +1,26 @@
+# Caddy is the entry point: every request from the browser arrives here,
+# and Caddy decides who answers it. The browser sees one address for both the
+# pages and the API, so no CORS configuration is needed in Spring Boot.
+#
+# Development only: plain HTTP on port 80 inside the container (localhost:8088
+# on your machine). A production Caddyfile would use a domain name and HTTPS.
+
+:80 {
+	# The API goes to Spring Boot. API_UPSTREAM comes from the compose files:
+	# api:8080 (the container) or host.docker.internal:8080 (your IDE).
+	handle /api/* {
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	# /api/health should be forwarded to /actuator/health in Spring Boot, so the health check works.
+	handle /api/healthz {
+        rewrite * /actuator/health
+        reverse_proxy {$API_UPSTREAM}
+    }
+
+	# Everything else goes to the frontend: Nginx serves the files and falls
+	# back to index.html for routes like /products/42.
+	handle {
+		reverse_proxy frontend:80
+	}
+}

@@ -1,0 +1,36 @@
+/* order-line-table.css */
+
+.order-line-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.order-line-table th,
+.order-line-table td {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.order-line-table thead th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.order-line-table .order-line-table__number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.order-line-table tfoot th,
+.order-line-table tfoot td {
+  border-bottom: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}

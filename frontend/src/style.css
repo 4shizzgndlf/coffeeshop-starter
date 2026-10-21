@@ -1,0 +1,356 @@
+    /* One stylesheet per component, next to its .js file. Add new ones here. */
+@import "./js/components/button.css";
+@import "./js/components/error-message.css";
+@import "./js/components/notice.css";
+@import "./js/components/search-input.css";
+@import "./js/components/category-filter.css";
+@import "./js/components/product-image.css";
+@import "./js/components/stock-status.css";
+@import "./js/components/product-card.css";
+@import "./js/components/product-list.css";
+@import "./js/components/quantity-input.css";
+@import "./js/components/cart-line.css";
+@import "./js/components/cart-summary.css";
+@import "./js/components/cart-badge.css";
+@import "./js/components/customer-form.css";
+@import "./js/components/status-badge.css";
+@import "./js/components/order-row.css";
+@import "./js/components/order-line-table.css";
+
+/* GLOBAL STYLES */
+
+/* Colour tokens: components use these, so dark mode only has to change them here */
+:root {
+    --bg: #f8f5f1;
+    --surface: #ffffff;
+    --text: #2a211c;
+    --muted: #75685e;
+    --line: #e7dfd7;
+    --accent: #8a4b2a;
+    --accent-text: #ffffff;
+    --selected: #f3e6dc;
+    --error-bg: #fdecec;
+    --error-text: #9b1c1c;
+    --success-bg: #e7f4ea;
+    --success-text: #1e6b34;
+    --warning-text: #a15c00;
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #161210;
+        --surface: #211b18;
+        --text: #efe7e1;
+        --muted: #a99c92;
+        --line: #352c27;
+        --accent: #e0a47a;
+        --accent-text: #1b120d;
+        --selected: #3a2a20;
+        --error-bg: #3a1d1d;
+        --error-text: #ffb4b4;
+        --success-bg: #1b3122;
+        --success-text: #9fdcae;
+        --warning-text: #f5b961;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    /* Pin header to top, and footer to bottom of viewport */
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+}
+
+a {
+    color: var(--accent);
+}
+
+h1 {
+    margin: 0 0 1rem;
+    line-height: 1.2;
+}
+
+h2 {
+    font-size: 1.15rem;
+}
+
+header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--surface);
+    padding: 1rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+nav a {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    color: var(--muted);
+    text-decoration: none;
+}
+
+nav a:hover {
+    color: var(--text);
+}
+
+/* Set by router.js on the link for the current page */
+nav a[aria-current="page"] {
+    background: var(--selected);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Text fields and dropdowns (checkboxes keep the browser's look) */
+input:not([type="checkbox"]):not([type="radio"]),
+select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    /* Not bold, even inside a bold <label> */
+    font-weight: normal;
+}
+
+input:focus-visible,
+select:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    outline-offset: 1px;
+}
+
+/* Stacked form: each label above its field */
+.form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    max-width: 32rem;
+}
+
+.form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+    font-weight: 600;
+}
+
+/* A link that looks like a button (see button.css) */
+a.button {
+    text-decoration: none;
+}
+
+main {
+    display: block;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+    width: 100%;
+}
+
+footer {
+    display: block;
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.8rem;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--muted);
+}
+
+/* SHARED PAGE BUILDING BLOCKS */
+
+.muted {
+    color: var(--muted);
+}
+
+.page-header p {
+    margin-top: -0.5rem;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    text-decoration: none;
+}
+
+.empty-state {
+    padding: 2rem 0;
+    color: var(--muted);
+}
+
+.card {
+    padding: 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+.card h2 {
+    margin-top: 0;
+}
+
+/* Content on the left, a summary box on the right (cart, checkout, order) */
+.layout-with-sidebar {
+    display: grid;
+    grid-template-columns: 1fr minmax(16rem, 22rem);
+    align-items: start;
+    gap: 2rem;
+}
+
+.layout-with-sidebar > :first-child h2 {
+    margin-top: 0;
+}
+
+@media (max-width: 48rem) {
+    .layout-with-sidebar {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Category buttons and search field above the product list */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.toolbar .search-input {
+    flex: 0 1 20rem;
+    margin-bottom: 0;
+}
+
+/* PAGES */
+
+/* productPage.js */
+.product-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2rem;
+}
+
+.product-detail__category {
+    margin: 0 0 0.25rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+}
+
+.product-detail__name {
+    margin-bottom: 0.25rem;
+}
+
+.product-detail__details {
+    margin-top: 0;
+    color: var(--muted);
+}
+
+.product-detail__price {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.product-detail__buy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+}
+
+@media (max-width: 40rem) {
+    .product-detail {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* cartPage.js */
+.cart-lines {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* ordersPage.js */
+.order-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* orderPage.js */
+.order-detail__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+.order-detail__header h1 {
+    margin: 0;
+}
+
+.order-detail__address {
+    font-style: normal;
+    margin-bottom: 1rem;
+}
+
+.order-detail__address span {
+    display: block;
+}
+
+/* checkoutPage.js */
+.confirmation {
+    max-width: 36rem;
+    padding: 2rem 0;
+}
+
+.confirmation__links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+/* profilePage.js */
+.email-lookup {
+    max-width: 24rem;
+}
+
+.profile-footer {
+    margin-top: 2rem;
+}

@@ -1,0 +1,33 @@
+#cloud-config
+#
+# Runs once, the first time a new VM starts:
+#
+#   az vm create ... --custom-data deploy/cloud-init.yaml
+#
+# It adds a swap file and installs Docker from Docker's own apt repository
+# (the same steps as https://docs.docker.com/engine/install/ubuntu/).
+#
+# On the VM, wait until it has finished with:   cloud-init status --wait
+# What it printed is in:                       /var/log/cloud-init-output.log
+
+runcmd:
+  # 2 GB of swap: a safety net on a VM with only 2 GB of memory,
+  # so a memory peak makes things slower instead of killing MySQL or Java
+  - fallocate -l 2G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo "/swapfile none swap sw 0 0" >> /etc/fstab
+
+  # Docker's signing key and apt repository
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+
+  # Docker Engine and the Compose plugin ("docker compose")
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # Lets azureuser (the --admin-username) use docker without sudo, from the next login
+  - usermod -aG docker azureuser

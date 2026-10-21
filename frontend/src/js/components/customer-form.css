@@ -1,0 +1,31 @@
+/* customer-form.css - builds on the stacked .form layout in style.css */
+
+/* Two classes: style.css's ".form" comes after the @imports and would win otherwise */
+.form.customer-form {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 1rem;
+  max-width: 32rem;
+}
+
+/* Every field spans both columns, except postal code and city, which share a row */
+.form.customer-form > * {
+  grid-column: 1 / -1;
+}
+
+.form.customer-form .customer-form__field--postalCode {
+  grid-column: 1;
+}
+
+.form.customer-form .customer-form__field--city {
+  grid-column: 2;
+}
+
+.customer-form .button {
+  justify-self: start;
+}
+
+.customer-form__error {
+  font-weight: normal;
+  color: var(--error-text);
+}
