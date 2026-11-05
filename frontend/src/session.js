@@ -1,18 +1,13 @@
 // session.js
 //
-// Remembers who is shopping between page loads, in localStorage:
-// - the cart id, created on the first "Add to cart" (the cart itself is in cart.js)
-// - the customer id, created at checkout or on the profile page
+// Remembers this browser's cart between page loads, in localStorage. The cart id is
+// created on the first "Add to cart" (the cart itself is in cart.js). Anyone can
+// shop without logging in; the login is only needed at checkout.
 //
-// There is no login yet. With Spring Security, the customer would come from the
-// login instead, and the cart would belong to the logged-in customer.
-
-import { getCustomer } from "./services/customers.js";
+// Who is logged in is not stored here: the session cookie remembers that, and
+// auth.js asks the backend (GET /api/me).
 
 const CART_KEY = "coffeeshop.cartId";
-const CUSTOMER_KEY = "coffeeshop.customerId";
-
-// ---------- Cart ----------
 
 export function getCartId() {
     return read(CART_KEY);
@@ -24,41 +19,6 @@ export function setCartId(id) {
 
 export function forgetCartId() {
     remove(CART_KEY);
-}
-
-// ---------- Customer ----------
-
-// The customer of this browser, or null if there is none yet
-export async function loadCustomer() {
-    const id = read(CUSTOMER_KEY);
-
-    if (id === null) {
-        return null;
-    }
-
-    try {
-        return await getCustomer(id);
-    } catch (error) {
-        // The customer no longer exists, e.g. after "docker compose down -v": forget it
-        if (error.status === 404) {
-            remove(CUSTOMER_KEY);
-            return null;
-        }
-
-        throw error;
-    }
-}
-
-export function getCustomerId() {
-    return read(CUSTOMER_KEY);
-}
-
-export function setCustomerId(id) {
-    write(CUSTOMER_KEY, id);
-}
-
-export function forgetCustomer() {
-    remove(CUSTOMER_KEY);
 }
 
 // ---------- localStorage ----------

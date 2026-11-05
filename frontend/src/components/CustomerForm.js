@@ -3,18 +3,18 @@
 import { createButton } from "./Button.js";
 import { createErrorMessage } from "./ErrorMessage.js";
 
-// The fields match CustomerRequest in the backend (same names and max lengths)
+// The fields of PUT /api/customers/me (same names and max lengths as in the backend).
+// There is no email: the customer's email is the one they logged in with.
 const FIELDS = [
     { name: "name", label: "Name", autocomplete: "name", maxLength: 100 },
-    { name: "email", label: "Email", type: "email", autocomplete: "email", maxLength: 254 },
     { name: "street", label: "Street and number", autocomplete: "street-address", maxLength: 120 },
     { name: "postalCode", label: "Postal code", autocomplete: "postal-code", maxLength: 10 },
     { name: "city", label: "City", autocomplete: "address-level2", maxLength: 60 }
 ];
 
-// A form for name, email and address. customer (optional) fills in the fields.
+// A form for the name and delivery address. customer (optional) fills in the fields.
 //
-// onSubmit({ name, email, street, postalCode, city }) should return a promise.
+// onSubmit({ name, street, postalCode, city }) should return a promise.
 // If it rejects, the form shows why: next to the field for validation errors
 // from the backend (400), above the button for anything else (e.g. 409).
 export function createCustomerForm({

@@ -1,7 +1,7 @@
 // services/http.js
 // Use relative URLs like "/api/products" for your own backend.
-// Every request goes through request(), so error handling (and later the login
-// token, when Spring Security is added) only has to be written once.
+// Every request goes through request(), so error handling and the CSRF token
+// only have to be written once, and no request can forget them.
 
 // An error the user can be shown, e.g. "Only 2 left of Kenya Nyeri AA".
 // - status: the HTTP status, or 0 if the server could not be reached
@@ -22,18 +22,35 @@ export function getJSON(url) {
 // Sends a request with an optional JSON body, e.g. sendJSON("POST", "/api/carts").
 // Returns the parsed JSON, or null when there's no body (204 No Content).
 export function sendJSON(method, url, body) {
-    return request(method, url, body);
+    return request(method, url, { json: body });
 }
 
-async function request(method, url, body) {
+// Sends form fields instead of JSON (application/x-www-form-urlencoded).
+// Spring Security's formLogin only reads form fields: sendForm("/api/login", new FormData(form))
+export function sendForm(url, formData) {
+    return request("POST", url, { form: formData });
+}
+
+async function request(method, url, { json, form } = {}) {
     const options = {
         method,
         headers: { Accept: "application/json" }
     };
 
-    if (body !== undefined) {
+    if (json !== undefined) {
         options.headers["Content-Type"] = "application/json";
-        options.body = JSON.stringify(body);
+        options.body = JSON.stringify(json);
+    }
+
+    if (form !== undefined) {
+        // fetch sets the Content-Type itself for URLSearchParams
+        options.body = new URLSearchParams(form);
+    }
+
+    // Spring Security (csrf.spa()) rejects a request that changes something with 403,
+    // unless it has this header. GET only reads, so it needs no token.
+    if (method !== "GET") {
+        options.headers["X-XSRF-TOKEN"] = csrfToken();
     }
 
     let response;
@@ -57,6 +74,15 @@ async function request(method, url, body) {
     return data;
 }
 
+// Spring writes the token to the XSRF-TOKEN cookie. A page on another site can make
+// the browser send that cookie, but it can't read it and copy it into a header.
+// Empty until the backend uses Spring Security.
+function csrfToken() {
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+
+    return match ? decodeURIComponent(match[1]) : "";
+}
+
 // Returns the parsed JSON body, or null if the body is empty or not JSON
 async function readJson(response) {
     try {
@@ -76,6 +102,14 @@ function errorMessage(status, data) {
     // Caddy answers 502 when it can't reach Spring Boot
     if (status === 502 || status === 503 || status === 504) {
         return `Cannot reach the API (HTTP ${status}). Is Spring Boot running?`;
+    }
+
+    if (status === 401) {
+        return "Please log in first.";
+    }
+
+    if (status === 403) {
+        return "You are not allowed to do that.";
     }
 
     if (status >= 500) {

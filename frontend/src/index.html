@@ -28,10 +28,15 @@
     </a>
     <nav>
       <a href="/" data-navigo>Shop</a>
+      <a href="/assistant" data-navigo>Assistant</a>
       <a href="/orders" data-navigo>My orders</a>
       <a href="/profile" data-navigo>Profile</a>
+      <!-- Shown to staff only, by initUserMenu() (components/UserMenu.js) -->
+      <a id="staff-link" href="/staff" data-navigo hidden>Staff</a>
       <!-- initCartBadge() (components/CartBadge.js) shows the item count here -->
       <a id="cart-link" href="/cart" data-navigo>Cart<span class="cart-badge" hidden></span></a>
+      <!-- "Log in", or the user's email and "Log out" (components/UserMenu.js) -->
+      <span id="user-menu" class="user-menu"></span>
     </nav>
   </header>
 

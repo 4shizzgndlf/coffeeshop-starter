@@ -4,10 +4,10 @@ import { refreshCart } from "../cart.js";
 import { createCartSummary } from "../components/CartSummary.js";
 import { createCustomerForm } from "../components/CustomerForm.js";
 import { formatPrice } from "../format.js";
+import { handleAuthError } from "../guards.js";
 import { setTitle } from "../router.js";
-import { createCustomer, updateCustomer } from "../services/customers.js";
+import { getMyProfile, saveMyProfile } from "../services/customers.js";
 import { placeOrder } from "../services/orders.js";
-import { loadCustomer, setCustomerId } from "../session.js";
 
 export function CheckoutPage() {
     const element = document.createElement("section");
@@ -15,12 +15,14 @@ export function CheckoutPage() {
 
     async function load() {
         let cart;
-        let customer;
+        let profile;
 
         try {
-            [cart, customer] = await Promise.all([refreshCart(), loadCustomer()]);
+            [cart, profile] = await Promise.all([refreshCart(), getMyProfile()]);
         } catch (error) {
-            element.textContent = `Could not load the checkout. ${error.message}`;
+            if (!handleAuthError(error)) {
+                element.textContent = `Could not load the checkout. ${error.message}`;
+            }
             return;
         }
 
@@ -39,13 +41,23 @@ export function CheckoutPage() {
         details.innerHTML = `<h2>Delivery details</h2>`;
 
         const form = createCustomerForm({
-            customer,
+            customer: profile,
             submitLabel: `Place order · ${formatPrice(cart.total)}`,
 
             // Errors thrown here (e.g. 409 "Only 2 left of ...") are shown by the form
             async onSubmit(data) {
-                const customerId = await saveCustomer(data);
-                const order = await placeOrder({ customerId, cartId: cart.id });
+                let order;
+
+                try {
+                    // Saves the delivery details on the profile first: the order copies them
+                    await saveMyProfile(data);
+                    order = await placeOrder({ cartId: cart.id });
+                } catch (error) {
+                    if (handleAuthError(error)) {
+                        return;
+                    }
+                    throw error;
+                }
 
                 // The backend emptied the cart. Loading it again tells the badge in the header
                 refreshCart().catch(console.error);
@@ -56,31 +68,11 @@ export function CheckoutPage() {
 
         details.append(form);
 
-        if (!customer) {
-            const hint = document.createElement("p");
-            hint.className = "muted";
-            hint.innerHTML = `Ordered before? <a href="/profile" data-navigo>Find your profile</a> to use your saved details.`;
-            details.append(hint);
-        }
-
         const layout = document.createElement("div");
         layout.className = "layout-with-sidebar";
         layout.append(details, createCartSummary({ cart, showLines: true }));
 
         element.replaceChildren(heading, layout);
-
-        // A new customer is created the first time; after that the profile is updated.
-        // Remembering `customer` matters if placing the order fails and the user tries
-        // again: the second attempt must not create the same customer twice.
-        async function saveCustomer(data) {
-            customer = customer
-                ? await updateCustomer(customer.id, data)
-                : await createCustomer(data);
-
-            setCustomerId(customer.id);
-
-            return customer.id;
-        }
     }
 
     function showConfirmation(order) {

@@ -30,6 +30,20 @@ export function NotFoundPage() {
     };
 }
 
+// Shown by the guards (guards.js) when the user is logged in, but without the role
+// the page needs, e.g. staff on "My orders"
+export function ForbiddenPage() {
+    const element = errorPage("Not for you", "Your account can't use this page.");
+    element.insertAdjacentHTML("beforeend", `<a href="/" data-navigo>Go to the shop</a>`);
+
+    return {
+        element,
+        mount() {
+            setTitle("Forbidden");
+        }
+    };
+}
+
 // Shown by app.js instead of the routes when the API can't be reached at startup.
 // message is the ApiError's, e.g. "Cannot reach the API (HTTP 502). Is Spring Boot running?"
 // No link to the shop: the routes aren't set up, so the user has to reload.

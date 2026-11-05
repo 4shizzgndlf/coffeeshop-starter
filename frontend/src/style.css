@@ -109,8 +109,24 @@ nav a[aria-current="page"] {
     font-weight: 600;
 }
 
+/* The hidden attribute always hides, also on elements whose CSS sets display */
+[hidden] {
+    display: none !important;
+}
+
+/* Read by screen readers, but not shown */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 /* Text fields and dropdowns (checkboxes keep the browser's look) */
 input:not([type="checkbox"]):not([type="radio"]),
+textarea,
 select {
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--line);
@@ -123,6 +139,7 @@ select {
 }
 
 input:focus-visible,
+textarea:focus-visible,
 select:focus-visible {
     outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent);
     outline-offset: 1px;
@@ -866,6 +883,84 @@ footer {
     font-weight: 700;
 }
 
+/* UserMenu.js - at the right end of the nav */
+.user-menu {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.5rem;
+}
+
+.user-menu__name {
+    color: var(--muted);
+    font-size: 0.875rem;
+}
+
+.user-menu__logout {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.user-menu__logout:hover {
+    background: var(--selected);
+}
+
+/* NotBuiltNotice.js */
+.not-built {
+    max-width: 36rem;
+    border-style: dashed;
+}
+
+.not-built__endpoints {
+    padding-left: 1.25rem;
+}
+
+/* ChatMessage.js */
+.chat-message {
+    max-width: 85%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+.chat-message--user {
+    align-self: flex-end;
+    border-color: transparent;
+    background: var(--selected);
+}
+
+.chat-message--error {
+    border-color: transparent;
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.chat-message__label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+/* pre-wrap keeps the line breaks in the model's answer */
+.chat-message__text {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.chat-message--pending .chat-message__text {
+    color: var(--muted);
+    font-style: italic;
+}
+
 /* PAGES */
 
 /* ProductPage.js */
@@ -960,11 +1055,56 @@ footer {
     gap: 1.5rem;
 }
 
-/* ProfilePage.js */
-.email-lookup {
-    max-width: 24rem;
+/* LoginPage.js and RegisterPage.js */
+.auth-page {
+    max-width: 28rem;
 }
 
-.profile-footer {
-    margin-top: 2rem;
+.form.auth-form {
+    max-width: none;
+}
+
+.auth-form__hint,
+.auth-form__error {
+    font-weight: normal;
+}
+
+.auth-form__error {
+    color: var(--error-text);
+}
+
+/* AssistantPage.js */
+.assistant {
+    max-width: 48rem;
+}
+
+.chat-log {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+.chat-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.chat-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+}
+
+.chat-form__label {
+    flex: 1;
+}
+
+.chat-form textarea {
+    width: 100%;
+    resize: vertical;
 }
