@@ -24,10 +24,14 @@ import java.util.Optional;
  * CustomerApi (who is ordering), CartApi (what is ordered) and CatalogApi (names,
  * prices and stock). The order itself only stores their ids, plus copies of the
  * values that must never change afterwards.
+ *
+ * Serves two kinds of callers:
+ * - OrderController (the REST API), with *Response records
+ * - other features, through the public OrderApi interface, with *Info records
  */
 @Service
 @Transactional
-class OrderService {
+class OrderService implements OrderApi {
 
     private final OrderRepository repository;
     private final CustomerApi customers;
@@ -132,6 +136,34 @@ class OrderService {
         order.ship();
 
         return OrderMapper.toResponse(order);
+    }
+
+    // ---------- OrderApi: used by other features ----------
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderSummaryInfo> findOrders(Long customerId) {
+        List<OrderSummaryInfo> result = new ArrayList<>();
+
+        for (Order order : repository.findByCustomerIdOrderByPlacedAtDesc(customerId)) {
+            result.add(OrderMapper.toSummaryInfo(order));
+        }
+
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderInfo getOrder(Long customerId, Long orderId) {
+        Optional<Order> result = repository.findByIdAndCustomerId(orderId, customerId);
+
+        // The same answer for someone else's order as for a missing one,
+        // so a caller can't find out which order ids exist
+        if (result.isEmpty()) {
+            throw new NotFoundException("Order not found: " + orderId);
+        }
+
+        return OrderMapper.toInfo(result.get());
     }
 
     private Order findOrder(Long id) {

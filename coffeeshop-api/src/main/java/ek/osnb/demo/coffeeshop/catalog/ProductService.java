@@ -15,7 +15,7 @@ import java.util.Optional;
 /**
  * Serves two kinds of callers:
  * - CatalogController (the REST API), with *Response records
- * - other features, through the public CatalogApi interface, with ProductInfo
+ * - other features, through the public CatalogApi interface, with *Info records
  */
 @Service
 @Transactional
@@ -44,12 +44,9 @@ class ProductService implements CatalogApi {
 
     @Transactional(readOnly = true)
     List<ProductResponse> search(Long categoryId, String search) {
-        // Treat "?q=" (empty) the same as no search at all
-        String text = (search == null || search.isBlank()) ? null : search.trim();
-
         List<ProductResponse> responses = new ArrayList<>();
 
-        for (Product product : products.search(categoryId, text)) {
+        for (Product product : products.search(categoryId, searchText(search))) {
             responses.add(CatalogMapper.toResponse(product));
         }
 
@@ -81,6 +78,36 @@ class ProductService implements CatalogApi {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoryInfo> listCategories() {
+        List<CategoryInfo> result = new ArrayList<>();
+
+        for (Category category : categories.findAll(Sort.by("name"))) {
+            result.add(CatalogMapper.toInfo(category));
+        }
+
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductDetailsInfo> searchProducts(Long categoryId, String text) {
+        List<ProductDetailsInfo> result = new ArrayList<>();
+
+        for (Product product : products.search(categoryId, searchText(text))) {
+            result.add(CatalogMapper.toDetailsInfo(product));
+        }
+
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDetailsInfo getProductDetails(Long productId) {
+        return CatalogMapper.toDetailsInfo(findProduct(productId));
+    }
+
     // No save() needed: the product is managed, so JPA writes the new stock
     // when the transaction commits - or not at all if it is rolled back.
     @Override
@@ -91,6 +118,11 @@ class ProductService implements CatalogApi {
     @Override
     public void releaseStock(Long productId, int quantity) {
         findProduct(productId).releaseStock(quantity);
+    }
+
+    // Treat "?q=" (empty) the same as no search at all
+    private static String searchText(String search) {
+        return (search == null || search.isBlank()) ? null : search.trim();
     }
 
     private Product findProduct(Long id) {

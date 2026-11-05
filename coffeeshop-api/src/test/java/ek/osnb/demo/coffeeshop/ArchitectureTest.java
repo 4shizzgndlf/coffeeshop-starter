@@ -33,7 +33,9 @@ class ArchitectureTest {
                     .orShould().haveSimpleNameEndingWith("Info")
                     .orShould().haveSimpleNameEndingWith("Event")
                     .orShould().haveSimpleNameEndingWith("Exception")
-                    .because("other features may only use a feature's *Api, *Info, *Event and *Exception types");
+                    .because("other features may only use a feature's *Api, *Info, *Event and *Exception types. "
+                            + "Make every other class package-private (no 'public'), "
+                            + "also @Configuration classes such as SecurityConfig: Spring finds them anyway");
 
     // Rule 2: entities are never shared between features. Another feature stores
     // the id (Long productId) instead of a JPA association (@ManyToOne Product).

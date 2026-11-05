@@ -76,6 +76,17 @@ class CustomerService implements CustomerApi {
         return CustomerMapper.toInfo(findCustomer(customerId));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<CustomerInfo> findCustomerByEmail(String email) {
+        if (email == null) {
+            return Optional.empty();
+        }
+
+        return repository.findByEmail(Customer.normalizeEmail(email))
+                .map(CustomerMapper::toInfo);
+    }
+
     private void requireEmailIsFree(String email) {
         if (repository.existsByEmail(Customer.normalizeEmail(email))) {
             throw new ConflictException("A customer with this email already exists");
