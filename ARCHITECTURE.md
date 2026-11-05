@@ -18,7 +18,7 @@ GitHub, GitLab and IntelliJ (with the Mermaid plugin) render the diagrams below.
 4. [Database: foreign keys inside a feature, ids across](#4-database-foreign-keys-inside-a-feature-ids-across)
 5. [Checkout, step by step](#5-checkout-step-by-step)
 6. [Frontend modules](#6-frontend-modules)
-7. [Features: use cases and user stories](#7-features-use-cases-and-user-stories)
+7. [Not built yet](#not-built-yet)
 
 ---
 
@@ -853,108 +853,11 @@ flowchart TB
 | `/profile` | `ProfilePage.js` | CustomerForm, Button, Notice, ErrorMessage | `getCustomer`, `findCustomerByEmail`, `createCustomer`, `updateCustomer` |
 | anything else | `NotFoundPage` in `ErrorPages.js` | | |
 | (API down at startup) | `ServerDownPage` in `ErrorPages.js` | | `refreshCart` failed in `app.js` |
+
 ---
 
-## 7. Features: use cases and user stories
+## Not built yet
 
-### Use cases
-
-Mermaid has no use case diagram, so this is a flowchart in that style: actors on the left, use cases
-(rounded) grouped by feature.
-
-```mermaid
-flowchart LR
-    customer(["Customer<br/>(browser, no login)"])
-    staff(["Staff<br/>(REST API only)"])
-    system(["Future feature<br/>(e.g. loyalty)"])
-
-    subgraph catalogUC["catalog"]
-        UC1(["Browse products"])
-        UC2(["Filter by category"])
-        UC3(["Search by name or origin"])
-        UC4(["View product details"])
-    end
-
-    subgraph cartUC["cart"]
-        UC5(["Add product to cart"])
-        UC6(["View cart and totals"])
-        UC7(["Change quantity"])
-        UC8(["Remove product"])
-    end
-
-    subgraph customerUC["customer"]
-        UC9(["Create profile"])
-        UC10(["Find profile by email"])
-        UC11(["Edit profile"])
-        UC12(["Forget profile in this browser"])
-    end
-
-    subgraph orderUC["order"]
-        UC13(["Place order"])
-        UC14(["View my orders"])
-        UC15(["View order details"])
-        UC16(["Cancel order"])
-        UC17(["Ship order"])
-        UC18(["React to a placed order"])
-    end
-
-    customer --- UC1 & UC2 & UC3 & UC4
-    customer --- UC5 & UC6 & UC7 & UC8
-    customer --- UC9 & UC10 & UC11 & UC12
-    customer --- UC13 & UC14 & UC15 & UC16
-    staff --- UC17
-    system -.- UC18
-
-    UC13 -. "includes (first order)" .-> UC9
-    UC13 -. "includes" .-> UC6
-    UC5 -. "checks stock" .-> UC4
-```
-
-### User stories
-
-All of these are implemented, in the REST API and (except US-17 and US-18) in the UI. The *Tests* column
-names the tests that cover each story (`CheckoutFlowTest` unless another class is given).
-
-#### Catalog
-
-| ID | User story | Acceptance criteria | Where | Tests |
-|----|-----------|---------------------|-------|-------|
-| US-01 | As a **customer** I want to **see all products** so that I can choose what to buy. | Each product shows category, name, origin and roast (if coffee), price in DKK and stock status ("In stock", "Only 3 left", "Out of stock"). Sold-out products can't be added. | `/` · `GET /api/products` | `catalogIsFilledWithCategoriesAndProducts` |
-| US-02 | As a **customer** I want to **filter by category** so that I only see beans, ground coffee or equipment. | "All" plus one button per category. The chosen one is highlighted. | `/` · `GET /api/categories`, `GET /api/products?categoryId=` | `productsCanBeFilteredByCategory` |
-| US-03 | As a **customer** I want to **search by name or origin** so that I find e.g. all Kenyan coffee. | Case-insensitive. Combines with the category filter. Shows a message when nothing matches. | `/` · `GET /api/products?q=` | `productsCanBeSearchedByNameOrOrigin` |
-| US-04 | As a **customer** I want to **see a product's details** so that I know what I'm buying. | Description, price and stock. Quantity can be chosen up to the stock (max 99). An unknown product shows "does not exist". | `/products/:id` · `GET /api/products/{id}` | `unknownProductReturns404AsProblemDetail` |
-
-#### Cart
-
-| ID | User story | Acceptance criteria | Where | Tests |
-|----|-----------|---------------------|-------|-------|
-| US-05 | As a **customer** I want to **add products to a cart** so that I can buy several things at once. | A cart is created on the first add and remembered by the browser. Adding the same product again increases its quantity. More than the stock gives "Only N left of ..." (409). | `/`, `/products/:id` · `POST /api/carts`, `POST /api/carts/{id}/items` | `addingMoreToTheCartThanInStockReturns409`, `CartTest`, `CartServiceTest` |
-| US-06 | As a **customer** I want to **see my cart with totals** so that I know what I'll pay. | Lines show today's price, line total and quantity. The summary shows the item count and total. The header badge shows the item count on every page and survives a reload. | `/cart` · `GET /api/carts/{id}` | `fullCheckoutFlow`, `CartServiceTest` |
-| US-07 | As a **customer** I want to **change the quantity** of a product in my cart. | 1-99 and at most the stock. A warning appears if the stock dropped below the quantity in the cart. | `/cart` · `PUT /api/carts/{id}/items/{productId}` | `CartTest` |
-| US-08 | As a **customer** I want to **remove a product** from my cart. | The line disappears and the totals update. The empty cart links back to the shop. | `/cart` · `DELETE /api/carts/{id}/items/{productId}` | `CartTest` |
-
-#### Customer
-
-| ID | User story | Acceptance criteria | Where | Tests |
-|----|-----------|---------------------|-------|-------|
-| US-09 | As a **new customer** I want to **enter my name, email and address** so that my order can be delivered. | Done at checkout or on the profile page. Every field is required, and the email must be valid: errors are shown next to the field (400). One profile per email (409). | `/checkout`, `/profile` · `POST /api/customers` | `invalidCustomerReturns400WithAnErrorPerField`, `sameEmailCannotBeUsedTwice` |
-| US-10 | As a **returning customer** I want to **find my profile by my email** so that I can use it in a new browser. | Case-insensitive. Shows "No customer has that email" if unknown. *Stand-in for a login.* | `/profile` · `GET /api/customers?email=` | `customerCanBeFoundByEmail` |
-| US-11 | As a **customer** I want to **edit my details** so that future orders go to my new address. | Saved details show a confirmation. Existing orders keep the old address. | `/profile`, `/checkout` · `PUT /api/customers/{id}` | `OrderServiceTest` (address copied) |
-| US-12 | As a **customer on a shared computer** I want to **forget my profile in this browser**. | The profile is removed from `localStorage`. "My orders" is empty again. The data on the server stays. | `/profile` | - |
-
-#### Orders
-
-| ID | User story | Acceptance criteria | Where | Tests |
-|----|-----------|---------------------|-------|-------|
-| US-13 | As a **customer** I want to **place an order from my cart** so that I get my coffee. | The stock is reserved and the cart is emptied, and a confirmation with the order number is shown. Names, prices and address are copied into the order. If any product is short on stock, nothing changes (409). An empty cart can't be ordered (409). | `/checkout` · `POST /api/orders` | `fullCheckoutFlow`, `whenStockRunsOutBeforeCheckoutNothingIsChanged`, `emptyCartCannotBeOrdered`, `OrderServiceTest` |
-| US-14 | As a **customer** I want to **see my orders** so that I can keep track of them. | Newest first, each with number, date, item count, status and total. | `/orders` · `GET /api/orders?customerId=` | `fullCheckoutFlow` |
-| US-15 | As a **customer** I want to **see an order's details**. | Lines with the prices paid, the shipping address and the status. Works as a direct link. | `/orders/:id` · `GET /api/orders/{id}` | `fullCheckoutFlow` |
-| US-16 | As a **customer** I want to **cancel an order that hasn't shipped** so that I don't pay for something I no longer want. | Only PLACED orders. The items go back in stock. A second cancel gives 409. | `/orders/:id` · `POST /api/orders/{id}/cancel` | `fullCheckoutFlow`, `OrderTest`, `OrderServiceTest` |
-| US-17 | As **staff** I want to **mark an order as shipped**. | Only PLACED orders. A shipped order can no longer be cancelled. *API only. Should require a staff login later.* | `POST /api/orders/{id}/ship` | `shippedOrderCannotBeCancelled`, `OrderTest` |
-| US-18 | As a **developer of a new feature** I want to **be told when an order is placed** so that I can react without changing the order code. | `OrderPlacedEvent` (order id, customer id, total, time) is published at checkout. | `OrderService` | `fullCheckoutFlow`, `OrderServiceTest` |
-
-### Not built yet
-
-Ideas for the next features are listed in the README under [Feature ideas](README.md#feature-ideas):
-login with Spring Security, reviews, wishlist, discount codes, loyalty points (via US-18),
-product management and AI recommendations.
+Ideas for the next features: login with Spring Security, reviews, wishlist, discount codes,
+loyalty points (via `OrderPlacedEvent`), product management and AI recommendations. The README
+explains [how to add a feature](README.md#adding-a-feature).

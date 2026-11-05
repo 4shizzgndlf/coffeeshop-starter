@@ -1,6 +1,9 @@
 # Secrets - copy .env.example to .env and never commit .env
 .env
 
+# Teacher-only material (requirements brief, answer key, notes) - never committed
+hidden/
+
 # Maven
 target/
 .mvn/wrapper/maven-wrapper.jar

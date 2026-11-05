@@ -1,5 +1,5 @@
 # Continuous integration: test and build everything on every push and pull request.
-# It never publishes anything - release.yml does that, for version tags only.
+# It never publishes anything.
 
 name: CI
 
