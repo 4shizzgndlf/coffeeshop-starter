@@ -5,6 +5,10 @@ how to run it and how to add a feature.
 
 GitHub, GitLab and IntelliJ (with the Mermaid plugin) render the diagrams below.
 
+> **AI project:** the backend diagrams show the code as it is before your changes. The frontend
+> already uses the login and the API from [AI-PROJECT.md](AI-PROJECT.md), so the frontend section
+> (`session.js`, the profile and checkout pages) describes the version without a login.
+
 ## Contents
 
 1. [Runtime: the parts and how they talk](#1-runtime-the-parts-and-how-they-talk)

@@ -6,6 +6,9 @@ check out and follow their orders.
 It is a complete, working app that is built to be extended. Every feature follows the same pattern,
 so you add a new one by copying what is already there.
 
+> **AI project:** start with [AI-PROJECT.md](AI-PROJECT.md). The frontend already uses the secured
+> API described there; the backend is yours to change.
+
 | Part | What it is |
 |------|------------|
 | `coffeeshop-api/` | REST API: Java 25, Spring Boot 4.1, Spring Data JPA, MySQL 8.4 |
@@ -85,6 +88,9 @@ Entities guard their own rules (`cart.addItem(...)`, `order.cancel()`), and have
 
 ## REST API
 
+The backend as it is now. The frontend already uses the API in [AI-PROJECT.md](AI-PROJECT.md),
+so checkout, orders and the profile need your changes first.
+
 | Method | Path | Body | Description |
 |--------|------|------|-------------|
 | GET | `/api/categories` | | All categories |
@@ -112,8 +118,10 @@ frontend/src/
 ├── index.html, style.css   header and nav, <main id="app">; one CSS section per component
 ├── app.js                  init() and the routes: path -> page
 ├── router.js               render(Page, props), Navigo, setTitle()
+├── auth.js                 who is logged in (GET /api/me), subscribeToUser()
+├── guards.js               requireAuth, requireRole, requireGuest for the routes
 ├── cart.js                 the cart of this browser, subscribeToCart()
-├── session.js              cart id and customer id in localStorage
+├── session.js              the guest cart's id in localStorage
 ├── services/               http.js + one module per backend feature
 ├── pages/                  XxxPage(props) returns { element, mount, unmount }
 └── components/             createXxx({ ...options, onSomething }) returns an element
@@ -157,7 +165,7 @@ Hibernate (`ddl-auto=update`) creates the new table on the next start.
 ## Known limitations
 
 - **No login.** Anyone who knows an id can read that cart, customer or order, and
-  `GET /api/customers?email=` works as a "login" with just an email.
+  `GET /api/customers?email=` works as a "login" with just an email. Fixing this is the AI project.
 - **`/api/orders/{id}/ship` is open** to everyone.
 - **Ids are sequential**, so they are easy to guess.
 - **`ddl-auto=update`** never removes or renames columns. A real project would use migrations (Flyway).
