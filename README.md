@@ -68,9 +68,8 @@ coffeeshop/
 ├── .github/workflows/
 │   ├── ci.yml            tests and builds on every push and pull request
 │   └── release.yml       publishes both images to GHCR for every version tag
-├── compose.yaml          db + frontend + caddy (always used)
-├── compose.dev.yaml      overlay: Spring Boot runs in your IDE
-├── compose.full.yaml     overlay: Spring Boot runs in Docker too
+├── compose.dev.yaml      db + frontend + caddy: Spring Boot runs in your IDE
+├── compose.full.yaml     db + api + frontend + caddy: everything in Docker
 ├── Caddyfile             /api/* -> Spring Boot, everything else -> Nginx
 ├── .env.example          copy to .env (passwords)
 ├── docs/                 guides: deploy to Azure on one VM, or on two VMs in a private network
@@ -112,31 +111,35 @@ cp .env.example .env      # then replace the two passwords
 ### Development: Spring Boot in your IDE
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+docker compose -f compose.dev.yaml up -d
 ```
 
 Then start `CoffeeShopApplication` in IntelliJ (or `cd coffeeshop-api && ./mvnw spring-boot:run`)
 and open **http://localhost:8088**.
 
 - Spring Boot reads the passwords from `.env` itself (`spring.config.import` in `application.properties`).
-- The frontend files are mounted into Nginx: edit `frontend/src`, save, reload the browser.
+- Nginx serves `frontend/src` from your working copy: edit, save, reload the browser. No image to build.
 - MySQL is on `localhost:3306` for Spring Boot and for your database tool.
 - The catalog is filled by `CatalogInitData` on the first start.
 
 ### Everything in Docker
 
 ```bash
-docker compose -f compose.yaml -f compose.full.yaml up -d --build
+docker compose -f compose.full.yaml up -d --build
 ```
 
 Open **http://localhost:8088**. Use `--build` again after changing code.
 
 ### Stop
 
+With the file you started with:
+
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml down       # keeps the data
-docker compose -f compose.yaml -f compose.dev.yaml down -v    # also deletes the database
+docker compose -f compose.dev.yaml down       # keeps the data
+docker compose -f compose.dev.yaml down -v    # also deletes the database
 ```
+
+Both files use the project name `coffeeshop`, so dev and full share the same database.
 
 ### Build the images separately
 
@@ -520,7 +523,7 @@ These are deliberate, to keep the base small. Most of them are good features to 
 
 | Problem | Fix |
 |---------|-----|
-| A page shows "Cannot reach the API (HTTP 502). Is Spring Boot running?" | Dev mode: start `CoffeeShopApplication`. Full mode: `docker compose -f compose.yaml -f compose.full.yaml ps` |
+| A page shows "Cannot reach the API (HTTP 502). Is Spring Boot running?" | Dev mode: start `CoffeeShopApplication`. Full mode: `docker compose -f compose.full.yaml ps` |
 | Spring Boot: `Access denied for user` | `.env` is missing or its password differs from the one MySQL was created with. Fix `.env`, or start over with `down -v` |
 | Linux: Caddy can't reach Spring Boot in your IDE | `host.docker.internal` comes from `extra_hosts` in `compose.dev.yaml`. Also check that your firewall allows Docker to reach port 8080 |
 | You renamed a field and the old column is still there | `ddl-auto=update` never drops columns: `down -v` and start again |

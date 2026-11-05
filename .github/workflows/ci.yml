@@ -43,8 +43,8 @@ jobs:
           DB_PASSWORD: ci-placeholder
           MYSQL_ROOT_PASSWORD: ci-placeholder
         run: |
-          docker compose -f compose.yaml -f compose.dev.yaml config --quiet
-          docker compose -f compose.yaml -f compose.full.yaml config --quiet
+          docker compose -f compose.dev.yaml config --quiet
+          docker compose -f compose.full.yaml config --quiet
 
       - name: Build the API image
         run: docker build --tag coffeeshop-api:ci ./coffeeshop-api

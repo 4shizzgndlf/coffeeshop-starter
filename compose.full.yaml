@@ -1,13 +1,39 @@
 # Everything in Docker: MySQL, Spring Boot, Nginx and Caddy.
 #
-#   docker compose -f compose.yaml -f compose.full.yaml up -d --build
+#   docker compose -f compose.full.yaml up -d --build
 #
 # Open http://localhost:8088. Caddy reaches Spring Boot as "api" and Nginx as
 # "frontend" through Docker's DNS. Only Caddy has a published port.
+# The passwords come from the .env file next to this file (see .env.example).
 #
-# The frontend runs from its image here: rebuild (--build) after changing frontend/src.
+# The api and frontend run from their images here: rebuild (--build) after changing code.
+
+# Same project name as compose.dev.yaml, so both use the same database volume
+name: coffeeshop
 
 services:
+
+  db:
+    image: mysql:8.4
+    # Start again after a crash or a reboot - but not after "docker compose stop"
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: coffeeshop
+      MYSQL_USER: ${DB_USERNAME:-coffeeshop}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    # No ports: only the api talks to MySQL, inside Docker's network
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      # "healthy" once MySQL answers. Uses TCP (127.0.0.1), not the local socket:
+      # on first start MySQL runs a temporary socket-only server while it sets up,
+      # which must not count as healthy.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
 
   api:
     # Built from coffeeshop-api/Dockerfile. --build rebuilds it after code changes.
@@ -33,10 +59,42 @@ services:
       retries: 12
       start_period: 30s
 
+  frontend:
+    # Built from frontend/Dockerfile: Nginx with the files from frontend/src.
+    # It only serves files; Caddy decides which requests reach it.
+    build:
+      context: ./frontend
+    image: coffeeshop-frontend:local
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   caddy:
+    # The reverse proxy: the only service the browser talks to (see Caddyfile)
+    image: caddy:2.11-alpine
+    restart: unless-stopped
     ports:
       # http://localhost:8088
       - "127.0.0.1:8088:80"
+    environment:
+      # Where Caddy sends /api/: the api service, found through Docker's DNS
+      API_UPSTREAM: api:8080
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Caddy keeps its state here (certificates, once we use HTTPS)
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
+      frontend:
+        condition: service_healthy
       api:
         condition: service_healthy
+
+volumes:
+  # The database files. Survives "docker compose down" - only "down -v" deletes it.
+  mysql_data:
+  caddy_data:
+  caddy_config:
