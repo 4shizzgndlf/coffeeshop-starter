@@ -1,12 +1,12 @@
 # Coffee Shop: architecture and features
 
-Diagrams of how the code is organised and what the app can do. The [README](README.md) explains
-how to run it and how to add a feature.
+Diagrams of how the code is organised and what the app can do. The [README](../README.md) explains
+how to run it, and [Adding a feature](adding-a-feature.md) how to extend it.
 
 GitHub, GitLab and IntelliJ (with the Mermaid plugin) render the diagrams below.
 
 > **AI project:** the backend diagrams show the code as it is before your changes. The frontend
-> already uses the login and the API from [AI-PROJECT.md](AI-PROJECT.md), so the frontend section
+> already uses the login and the API from [AI-PROJECT.md](../AI-PROJECT.md), so the frontend section
 > (`session.js`, the profile and checkout pages) describes the version without a login.
 
 ## Contents
@@ -22,7 +22,6 @@ GitHub, GitLab and IntelliJ (with the Mermaid plugin) render the diagrams below.
 4. [Database: foreign keys inside a feature, ids across](#4-database-foreign-keys-inside-a-feature-ids-across)
 5. [Checkout, step by step](#5-checkout-step-by-step)
 6. [Frontend modules](#6-frontend-modules)
-7. [Not built yet](#not-built-yet)
 
 ---
 
@@ -858,10 +857,3 @@ flowchart TB
 | anything else | `NotFoundPage` in `ErrorPages.js` | | |
 | (API down at startup) | `ServerDownPage` in `ErrorPages.js` | | `refreshCart` failed in `app.js` |
 
----
-
-## Not built yet
-
-Ideas for the next features: login with Spring Security, reviews, wishlist, discount codes,
-loyalty points (via `OrderPlacedEvent`), product management and AI recommendations. The README
-explains [how to add a feature](README.md#adding-a-feature).
