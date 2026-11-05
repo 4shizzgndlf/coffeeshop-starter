@@ -1,4 +1,4 @@
-// api/orders.js - placing and viewing orders
+// services/orders.js - placing and viewing orders
 
 import { getJSON, sendJSON } from "./http.js";
 

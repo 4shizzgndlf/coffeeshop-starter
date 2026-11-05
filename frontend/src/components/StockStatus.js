@@ -1,6 +1,6 @@
 // components/StockStatus.js
 
-// "In stock", "Only 3 left" or "Out of stock", coloured by stock-status.css
+// "In stock", "Only 3 left" or "Out of stock", coloured by the StockStatus.js section in style.css
 export function createStockStatus({ stock, lowStockLimit = 5 }) {
     const element = document.createElement("span");
 

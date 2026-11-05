@@ -1,4 +1,4 @@
-// api/catalog.js - products and categories (read-only)
+// services/catalog.js - products and categories (read-only)
 
 import { getJSON } from "./http.js";
 

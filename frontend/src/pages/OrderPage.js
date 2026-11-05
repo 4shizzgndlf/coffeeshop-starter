@@ -1,38 +1,46 @@
-// pages/orderPage.js
+// pages/OrderPage.js
 
-import { cancelOrder, getOrder } from "../api/orders.js";
 import { createButton } from "../components/Button.js";
 import { createErrorMessage } from "../components/ErrorMessage.js";
 import { createOrderLineTable } from "../components/OrderLineTable.js";
 import { createStatusBadge } from "../components/StatusBadge.js";
 import { formatDate } from "../format.js";
 import { setTitle } from "../router.js";
+import { cancelOrder, getOrder } from "../services/orders.js";
 
-export async function renderOrderPage(container, { id }) {
-    container.textContent = "Loading...";
-
-    let order;
-
-    try {
-        order = await getOrder(id);
-    } catch (error) {
-        container.innerHTML = `
-            <a class="back-link" href="/orders" data-navigo>← My orders</a>
-            <p class="empty-state"></p>
-        `;
-        container.querySelector(".empty-state").textContent = error.status === 404
-            ? "This order does not exist."
-            : `Could not load the order. ${error.message}`;
-        return;
-    }
-
-    setTitle(`Order #${order.id}`);
+export function OrderPage({ id }) {
+    const element = document.createElement("section");
+    element.textContent = "Loading...";
 
     const errorMessage = createErrorMessage();
 
+    let order;
+
+    async function load() {
+        try {
+            order = await getOrder(id);
+        } catch (error) {
+            element.innerHTML = `
+                <a class="back-link" href="/orders" data-navigo>← My orders</a>
+                <p class="empty-state"></p>
+            `;
+            element.querySelector(".empty-state").textContent = error.status === 404
+                ? "This order does not exist."
+                : `Could not load the order. ${error.message}`;
+            return;
+        }
+
+        // Only while this page is still shown: the user may have moved on during the load
+        if (element.isConnected) {
+            setTitle(`Order #${order.id}`);
+        }
+
+        renderOrder();
+    }
+
     // Draws the whole page from `order` - called again after cancelling
     function renderOrder() {
-        container.innerHTML = `
+        element.innerHTML = `
             <a class="back-link" href="/orders" data-navigo>← My orders</a>
             <div class="order-detail__header">
                 <h1></h1>
@@ -50,13 +58,13 @@ export async function renderOrderPage(container, { id }) {
             </div>
         `;
 
-        container.querySelector("h1").textContent = `Order #${order.id}`;
-        container.querySelector(".order-detail__header").append(createStatusBadge({ status: order.status }));
-        container.querySelector(".order-detail__date").textContent = `Placed ${formatDate(order.placedAt)}`;
-        container.querySelector(".order-detail__lines").append(createOrderLineTable({ order }));
+        element.querySelector("h1").textContent = `Order #${order.id}`;
+        element.querySelector(".order-detail__header").append(createStatusBadge({ status: order.status }));
+        element.querySelector(".order-detail__date").textContent = `Placed ${formatDate(order.placedAt)}`;
+        element.querySelector(".order-detail__lines").append(createOrderLineTable({ order }));
 
         // One line per part of the address, each set with textContent
-        const address = container.querySelector(".order-detail__address");
+        const address = element.querySelector(".order-detail__address");
         const { recipientName, street, postalCode, city } = order.shippingAddress;
 
         for (const text of [recipientName, street, `${postalCode} ${city}`]) {
@@ -65,7 +73,7 @@ export async function renderOrderPage(container, { id }) {
             address.append(line);
         }
 
-        container.querySelector(".back-link").after(errorMessage.element);
+        element.querySelector(".back-link").after(errorMessage.element);
 
         // Only a placed order can be cancelled (the backend checks it too)
         if (order.status === "PLACED") {
@@ -75,7 +83,7 @@ export async function renderOrderPage(container, { id }) {
                 onClick: cancel
             });
 
-            container.querySelector(".order-detail__actions").append(cancelButton.element);
+            element.querySelector(".order-detail__actions").append(cancelButton.element);
         }
     }
 
@@ -94,5 +102,12 @@ export async function renderOrderPage(container, { id }) {
         renderOrder();
     }
 
-    renderOrder();
+    return {
+        element,
+        mount() {
+            // Replaced by "Order #3" once the order has loaded
+            setTitle("Order");
+            load();
+        }
+    };
 }

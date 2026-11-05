@@ -45,7 +45,7 @@ export function createCartSummary({
     element.querySelector(".cart-summary__amount").textContent = formatPrice(cart.total);
 
     if (checkoutLink) {
-        // A link styled as a button (button.css): navigating is what links are for
+        // A link styled as a button (Button.js in style.css): navigating is what links are for
         const link = document.createElement("a");
         link.className = "button";
         link.dataset.variant = "primary";

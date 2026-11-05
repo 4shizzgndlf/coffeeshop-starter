@@ -51,7 +51,7 @@ Adding Spring Security is one of the [feature ideas](#feature-ideas).
 |---|---|
 | Backend | Java 25, Spring Boot 4.1 (Web MVC, Data JPA, Validation, Actuator), Maven |
 | Database | MySQL 8.4 (Hibernate creates the tables) |
-| Frontend | HTML, CSS and JavaScript modules, [Navigo 8.11.1](https://github.com/krasimir/navigo) (copied into `src/js/vendor/`) |
+| Frontend | HTML, CSS and JavaScript modules, [Navigo 8.11.1](https://github.com/krasimir/navigo) (copied into `src/vendor/`) |
 | Servers | Caddy 2.11 (reverse proxy), Nginx 1.30 (static files) |
 | Tests | JUnit 5, Mockito, H2 (in-memory database), ArchUnit |
 | CI and releases | GitHub Actions, GitHub Container Registry (GHCR) |
@@ -90,15 +90,15 @@ coffeeshop/
     ├── scripts/update-navigo.sh
     └── src/
         ├── index.html, style.css, favicon.svg
-        └── js/
-            ├── app.js        routes: path -> page
-            ├── router.js     Navigo + page() wrapper
-            ├── session.js    cart id and customer id in localStorage
-            ├── format.js     prices, dates
-            ├── api/          http.js + one module per backend feature
-            ├── pages/        one file per page
-            ├── components/   createXxx() components + their CSS
-            └── vendor/       navigo.js (downloaded, don't edit)
+        ├── app.js        init() + routes: path -> page
+        ├── router.js     render(Page, props) + Navigo
+        ├── cart.js       the cart: state + subscribeToCart()
+        ├── session.js    cart id and customer id in localStorage
+        ├── format.js     prices, dates
+        ├── services/     http.js + one module per backend feature
+        ├── pages/        one XxxPage.js per page, ErrorPages.js
+        ├── components/   createXxx() components
+        └── vendor/       navigo.js (downloaded, don't edit)
 ```
 
 ## Run it
@@ -286,24 +286,29 @@ Plain JavaScript modules, loaded by the browser as they are. There is no `npm` a
 
 | File | Role |
 |------|------|
-| `index.html` | Header with nav, `<main id="app">`, import map `"navigo" → /js/vendor/navigo.js` |
-| `js/app.js` | The route list: `router.on("/cart", page(renderCartPage, "Cart"))` |
-| `js/router.js` | Navigo in history mode, `page()` wrapper (title, active nav link, scroll), one click listener for all `data-navigo` links |
-| `js/api/http.js` | `getJSON` / `sendJSON`; throws `ApiError` with the ProblemDetail `detail` and field `errors` |
-| `js/api/*.js` | One module per backend feature (`catalog.js`, `carts.js`, `customers.js`, `orders.js`) |
-| `js/session.js` | Cart id and customer id in `localStorage` (`loadCart`, `ensureCartId`, `loadCustomer`) |
-| `js/pages/*.js` | `renderXxxPage(container, params)` fills `<main>` |
-| `js/components/*.js` | `createXxx({...options, onSomething})` returns an element (or `{ element, ...methods }`) |
+| `index.html` | Header with nav and cart badge, `<main id="app">`, import map `"navigo" → /vendor/navigo.js` |
+| `app.js` | `init()`: starts the cart badge, loads the cart (or shows `ServerDownPage`), then the route list: `router.on("/cart", () => render(CartPage))` |
+| `router.js` | `render(Page, props)` swaps the page in `<main>`; Navigo in history mode; `setTitle()`; an `after` hook (active nav link, scroll); one click listener for all `data-navigo` links |
+| `services/http.js` | `getJSON` / `sendJSON`; throws `ApiError` with the ProblemDetail `detail` and field `errors` |
+| `services/*.js` | One module per backend feature (`catalog.js`, `carts.js`, `customers.js`, `orders.js`) |
+| `cart.js` | The cart of this browser: `refreshCart`, `addToCart`, `changeQuantity`, `removeFromCart`, `getCurrentCart`, `subscribeToCart` |
+| `session.js` | Cart id and customer id in `localStorage` (`getCartId`, `loadCustomer`, `setCustomerId`) |
+| `pages/*.js` | `XxxPage(props)` returns `{ element, mount, unmount }` (or just an element); `mount()` sets the title and loads the data |
+| `components/*.js` | `createXxx({...options, onSomething})` returns an element (or `{ element, ...methods }`) |
 
 Conventions:
 
+- **Pages** return their element right away, showing "Loading...", and fill it in `mount()` once the
+  data is there. `render()` calls `unmount()` on the old page first, e.g. to stop a timer.
 - **Components** build a fixed HTML skeleton with `innerHTML` and fill in data with `textContent`,
-  never by putting data into HTML. Their CSS sits next to them (BEM names, e.g. `.cart-line__total`)
-  and is `@import`ed at the top of `style.css`.
+  never by putting data into HTML. Their CSS is a section in `style.css`, named after the component
+  (`/* CartLine.js */`), with BEM class names, e.g. `.cart-line__total`.
+- **`services/`, not `api/`**: Caddy sends every `/api/*` request to Spring Boot, so a file served
+  as `/api/carts.js` would never reach Nginx.
 - **Components don't call the API.** They report what happened through callbacks (`onAddToCart`,
   `onQuantityChange`), and the page calls the API and redraws.
-- **The cart badge** in the header listens for a `cart:changed` event, which `api/carts.js` sends
-  after every change. Pages never update it themselves.
+- **The cart** lives in `cart.js`. Pages change it through `cart.js`, never through `services/carts.js`,
+  and the badge in the header redraws itself through `subscribeToCart()`, so no page has to update it.
 - **Colours** are tokens in `:root` (`--accent`, `--surface`, ...), with a dark-mode set.
 
 Update Navigo with `frontend/scripts/update-navigo.sh 8.11.1` (or a newer version).
@@ -463,7 +468,7 @@ There is no SQL to write: Hibernate (`ddl-auto=update`) creates the `reviews` ta
 
 ### Frontend checklist
 
-1. **API module** `js/api/reviews.js`:
+1. **API module** `services/reviews.js`:
    ```js
    import { getJSON, sendJSON } from "./http.js";
 
@@ -475,11 +480,13 @@ There is no SQL to write: Hibernate (`ddl-auto=update`) creates the `reviews` ta
        return sendJSON("POST", `/api/products/${productId}/reviews`, { customerId, rating, comment });
    }
    ```
-2. **Components** `js/components/ReviewList.js` and `ReviewForm.js` (+ `review-list.css`, `review-form.css`),
-   following `CustomerForm.js`: an `onSubmit(data)` that returns a promise. Add the CSS to the `@import` list in `style.css`.
-3. **Use them** in `pages/productPage.js`: load `getReviews(product.id)` next to the product, append the
+2. **Components** `components/ReviewList.js` and `ReviewForm.js`, following `CustomerForm.js`: an
+   `onSubmit(data)` that returns a promise. Add their CSS as `/* ReviewList.js */` and `/* ReviewForm.js */`
+   sections in the COMPONENTS part of `style.css`.
+3. **Use them** in `pages/ProductPage.js`: load `getReviews(product.id)` next to the product, append the
    list, and show the form when `getCustomerId()` (from `session.js`) is set.
-4. **A page of its own?** Add a route in `app.js` (`router.on("/reviews", page(renderReviewsPage, "Reviews"))`)
+4. **A page of its own?** Write `pages/ReviewsPage.js` like the other pages (`{ element, mount }`, `setTitle("Reviews")`
+   in `mount`), add a route in `app.js` (`.on("/reviews", () => render(ReviewsPage))`)
    and, if needed, a link in the `<nav>` in `index.html`.
 
 ## Feature ideas

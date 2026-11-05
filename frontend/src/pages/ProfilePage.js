@@ -1,32 +1,36 @@
-// pages/profilePage.js
+// pages/ProfilePage.js
 //
 // Without a login, "who am I" is just a customer id in localStorage (see session.js).
 // This page creates that profile, finds an existing one by email, or edits it.
 // When Spring Security is added, this becomes the "my account" page.
 
-import { createCustomer, findCustomerByEmail, updateCustomer } from "../api/customers.js";
 import { createButton } from "../components/Button.js";
 import { createCustomerForm } from "../components/CustomerForm.js";
 import { createErrorMessage } from "../components/ErrorMessage.js";
 import { createNotice } from "../components/Notice.js";
+import { setTitle } from "../router.js";
+import { createCustomer, findCustomerByEmail, updateCustomer } from "../services/customers.js";
 import { forgetCustomer, loadCustomer, setCustomerId } from "../session.js";
 
-export async function renderProfilePage(container) {
-    container.textContent = "Loading...";
+export function ProfilePage() {
+    const element = document.createElement("section");
+    element.textContent = "Loading...";
 
     let customer;
 
-    try {
-        customer = await loadCustomer();
-    } catch (error) {
-        container.textContent = `Could not load your profile. ${error.message}`;
-        return;
-    }
+    async function load() {
+        try {
+            customer = await loadCustomer();
+        } catch (error) {
+            element.textContent = `Could not load your profile. ${error.message}`;
+            return;
+        }
 
-    if (customer) {
-        renderExistingCustomer();
-    } else {
-        renderNewCustomer();
+        if (customer) {
+            renderExistingCustomer();
+        } else {
+            renderNewCustomer();
+        }
     }
 
     // ---------- A known customer: edit the details ----------
@@ -72,7 +76,7 @@ export async function renderProfilePage(container) {
         footer.className = "profile-footer";
         footer.append(forgetButton.element);
 
-        container.replaceChildren(heading, intro, notice.element, form, footer);
+        element.replaceChildren(heading, intro, notice.element, form, footer);
     }
 
     // ---------- No customer yet: find one by email, or create one ----------
@@ -135,6 +139,14 @@ export async function renderProfilePage(container) {
             }
         }));
 
-        container.replaceChildren(heading, lookup, create);
+        element.replaceChildren(heading, lookup, create);
     }
+
+    return {
+        element,
+        mount() {
+            setTitle("Profile");
+            load();
+        }
+    };
 }

@@ -743,7 +743,7 @@ features, always through their `XxxApi`. Everything inside `placeOrder` is one t
 sequenceDiagram
     autonumber
     actor C as Customer
-    participant SPA as checkoutPage.js
+    participant SPA as CheckoutPage.js
     participant CC as CustomerController
     participant OC as OrderController
     participant OS as OrderService
@@ -786,41 +786,42 @@ sequenceDiagram
     OS->>EV: publishEvent(OrderPlacedEvent)
     OS-->>OC: OrderResponse
     OC-->>SPA: 201 Created
-    SPA->>SPA: notifyCartChanged (badge shows 0), show confirmation
+    SPA->>SPA: refreshCart (badge shows 0), show confirmation
 ```
 
 ---
 
 ## 6. Frontend modules
 
-The frontend is grouped by type, like the course template. Pages call the API and draw components.
-Components never call the API themselves.
+The frontend is grouped by type, with the same structure as the other course demos: `app.js` lists
+the routes, `router.js` renders one page at a time, and shared state (the cart) lives in its own module.
+Pages call the API and draw components. Components never call the API themselves.
 
 ```mermaid
 flowchart TB
-    html["index.html<br/>import map: navigo"] --> app["js/app.js<br/>route list"]
-    app --> router["js/router.js<br/>page(), data-navigo links"]
-    router --> navigo["js/vendor/navigo.js"]
+    html["index.html<br/>import map: navigo"] --> app["app.js<br/>init(), route list"]
+    app --> router["router.js<br/>render(Page, props), data-navigo links"]
+    router --> navigo["vendor/navigo.js"]
     app --> pages
     app --> badge
 
-    subgraph pages["js/pages/"]
-        productsPage["productsPage"]
-        productPage["productPage"]
-        cartPage["cartPage"]
-        checkoutPage["checkoutPage"]
-        ordersPage["ordersPage"]
-        orderPage["orderPage"]
-        profilePage["profilePage"]
-        notFoundPage["notFoundPage"]
+    subgraph pages["pages/"]
+        productsPage["ProductsPage"]
+        productPage["ProductPage"]
+        cartPage["CartPage"]
+        checkoutPage["CheckoutPage"]
+        ordersPage["OrdersPage"]
+        orderPage["OrderPage"]
+        profilePage["ProfilePage"]
+        errorPages["ErrorPages<br/>NotFound, ServerDown"]
     end
 
-    subgraph components["js/components/"]
+    subgraph components["components/"]
         badge["CartBadge"]
         others["ProductCard, ProductList, CategoryFilter, SearchInput,<br/>QuantityInput, CartLine, CartSummary, CustomerForm,<br/>OrderRow, OrderLineTable, StatusBadge, StockStatus,<br/>ProductImage, Button, ErrorMessage, Notice"]
     end
 
-    subgraph api["js/api/"]
+    subgraph services["services/"]
         catalogJs["catalog.js"]
         cartsJs["carts.js"]
         customersJs["customers.js"]
@@ -829,26 +830,29 @@ flowchart TB
     end
 
     pages -->|"draw"| others
-    pages -->|"call"| api
-    pages --> session["js/session.js<br/>cartId + customerId in localStorage"]
-    session --> cartsJs & customersJs
-    others --> format["js/format.js<br/>prices, dates"]
+    pages -->|"call"| services
+    pages --> cart["cart.js<br/>the cart + subscribeToCart()"]
+    pages --> session["session.js<br/>cartId + customerId in localStorage"]
+    cart --> cartsJs
+    cart --> session
+    session --> customersJs
+    others --> format["format.js<br/>prices, dates"]
     catalogJs & cartsJs & customersJs & ordersJs --> http
     http -->|"fetch /api/..."| caddy[("Caddy → Spring Boot")]
-    cartsJs -.->|"cart:changed event"| badge
+    cart -.->|"subscribeToCart"| badge
 ```
 
-| Route | Page | Components | API calls |
+| Route | Page | Components | Calls (`services/`, or `cart.js` for the cart) |
 |-------|------|------------|-----------|
-| `/` | `productsPage.js` | CategoryFilter, SearchInput, ProductList → ProductCard (ProductImage, StockStatus, Button), ErrorMessage | `getCategories`, `getProducts`, `addToCart` |
-| `/products/:id` | `productPage.js` | ProductImage, StockStatus, QuantityInput, Button, Notice, ErrorMessage | `getProduct`, `addToCart` |
-| `/cart` | `cartPage.js` | CartLine (QuantityInput, Button), CartSummary, ErrorMessage | `getCart`, `changeQuantity`, `removeFromCart` |
-| `/checkout` | `checkoutPage.js` | CustomerForm, CartSummary | `createCustomer` / `updateCustomer`, `placeOrder` |
-| `/orders` | `ordersPage.js` | OrderRow (StatusBadge) | `getOrders` |
-| `/orders/:id` | `orderPage.js` | OrderLineTable, StatusBadge, Button, ErrorMessage | `getOrder`, `cancelOrder` |
-| `/profile` | `profilePage.js` | CustomerForm, Button, Notice, ErrorMessage | `getCustomer`, `findCustomerByEmail`, `createCustomer`, `updateCustomer` |
-| anything else | `notFoundPage.js` | | |
-
+| `/` | `ProductsPage.js` | CategoryFilter, SearchInput, ProductList → ProductCard (ProductImage, StockStatus, Button), ErrorMessage | `getCategories`, `getProducts`, `addToCart` |
+| `/products/:id` | `ProductPage.js` | ProductImage, StockStatus, QuantityInput, Button, Notice, ErrorMessage | `getProduct`, `addToCart` |
+| `/cart` | `CartPage.js` | CartLine (QuantityInput, Button), CartSummary, ErrorMessage | `refreshCart`, `changeQuantity`, `removeFromCart` |
+| `/checkout` | `CheckoutPage.js` | CustomerForm, CartSummary | `refreshCart`, `createCustomer` / `updateCustomer`, `placeOrder` |
+| `/orders` | `OrdersPage.js` | OrderRow (StatusBadge) | `getOrders` |
+| `/orders/:id` | `OrderPage.js` | OrderLineTable, StatusBadge, Button, ErrorMessage | `getOrder`, `cancelOrder` |
+| `/profile` | `ProfilePage.js` | CustomerForm, Button, Notice, ErrorMessage | `getCustomer`, `findCustomerByEmail`, `createCustomer`, `updateCustomer` |
+| anything else | `NotFoundPage` in `ErrorPages.js` | | |
+| (API down at startup) | `ServerDownPage` in `ErrorPages.js` | | `refreshCart` failed in `app.js` |
 ---
 
 ## 7. Features: use cases and user stories

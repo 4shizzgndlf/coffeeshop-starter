@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Downloads a pinned Navigo ES module build into src/js/vendor/navigo.js
+# Downloads a pinned Navigo ES module build into src/vendor/navigo.js
 # Usage: scripts/update-navigo.sh <version>   (latest: npm view navigo version)
 set -euo pipefail
 
 VERSION="${1:?usage: $0 <version>   (latest: npm view navigo version)}"
-OUT="$(cd "$(dirname "$0")/.." && pwd)/src/js/vendor/navigo.js"
+OUT="$(cd "$(dirname "$0")/.." && pwd)/src/vendor/navigo.js"
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 

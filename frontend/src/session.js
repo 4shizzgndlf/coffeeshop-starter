@@ -1,55 +1,29 @@
 // session.js
 //
 // Remembers who is shopping between page loads, in localStorage:
-// - the cart id, created on the first "Add to cart"
+// - the cart id, created on the first "Add to cart" (the cart itself is in cart.js)
 // - the customer id, created at checkout or on the profile page
 //
 // There is no login yet. With Spring Security, the customer would come from the
 // login instead, and the cart would belong to the logged-in customer.
 
-import { createCart, getCart, notifyCartChanged } from "./api/carts.js";
-import { getCustomer } from "./api/customers.js";
+import { getCustomer } from "./services/customers.js";
 
 const CART_KEY = "coffeeshop.cartId";
 const CUSTOMER_KEY = "coffeeshop.customerId";
 
 // ---------- Cart ----------
 
-// The cart of this browser, or null if there is none yet. Does not create one.
-export async function loadCart() {
-    const id = read(CART_KEY);
-
-    if (id === null) {
-        return null;
-    }
-
-    try {
-        const cart = await getCart(id);
-        notifyCartChanged(cart);
-        return cart;
-    } catch (error) {
-        // The cart no longer exists, e.g. after "docker compose down -v": forget it
-        if (error.status === 404) {
-            remove(CART_KEY);
-            return null;
-        }
-
-        throw error;
-    }
+export function getCartId() {
+    return read(CART_KEY);
 }
 
-// The id of this browser's cart. Creates a new cart the first time.
-export async function ensureCartId() {
-    const cart = await loadCart();
+export function setCartId(id) {
+    write(CART_KEY, id);
+}
 
-    if (cart) {
-        return cart.id;
-    }
-
-    const created = await createCart();
-    write(CART_KEY, created.id);
-
-    return created.id;
+export function forgetCartId() {
+    remove(CART_KEY);
 }
 
 // ---------- Customer ----------

@@ -22,7 +22,7 @@ export function createProductImage({ product }) {
     const element = document.createElement("div");
 
     element.className = "product-image";
-    // product-image.css picks the colours: LIGHT, MEDIUM, DARK or NONE (equipment)
+    // The ProductImage.js section in style.css picks the colours: LIGHT, MEDIUM, DARK or NONE (equipment)
     element.dataset.roast = product.roastLevel ?? "NONE";
     element.innerHTML = product.roastLevel ? BEAN : CUP;
 

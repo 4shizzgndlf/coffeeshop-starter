@@ -1,4 +1,4 @@
-// api/customers.js - customer profiles
+// services/customers.js - customer profiles
 
 import { getJSON, sendJSON } from "./http.js";
 

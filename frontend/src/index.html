@@ -14,7 +14,7 @@
   <script type="importmap">
     {
       "imports": {
-        "navigo": "/js/vendor/navigo.js"
+        "navigo": "/vendor/navigo.js"
       }
     }
   </script>
@@ -30,8 +30,8 @@
       <a href="/" data-navigo>Shop</a>
       <a href="/orders" data-navigo>My orders</a>
       <a href="/profile" data-navigo>Profile</a>
-      <!-- app.js adds the item count (CartBadge) to this link -->
-      <a id="cart-link" href="/cart" data-navigo>Cart</a>
+      <!-- initCartBadge() (components/CartBadge.js) shows the item count here -->
+      <a id="cart-link" href="/cart" data-navigo>Cart<span class="cart-badge" hidden></span></a>
     </nav>
   </header>
 
@@ -41,7 +41,7 @@
     <p>Coffee Shop &copy; 2026 &middot; A teaching project, no real coffee is sold</p>
   </footer>
 
-  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 
 </html>

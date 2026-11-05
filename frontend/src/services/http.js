@@ -1,4 +1,4 @@
-// api/http.js
+// services/http.js
 // Use relative URLs like "/api/products" for your own backend.
 // Every request goes through request(), so error handling (and later the login
 // token, when Spring Security is added) only has to be written once.
