@@ -12,11 +12,12 @@
 		reverse_proxy {$API_UPSTREAM}
 	}
 
-	# /api/health should be forwarded to /actuator/health in Spring Boot, so the health check works.
+	# /api/healthz is forwarded to /actuator/health in Spring Boot, so the health check works.
+	# Caddy tries the more specific path first, so this wins over /api/* above.
 	handle /api/healthz {
-        rewrite * /actuator/health
-        reverse_proxy {$API_UPSTREAM}
-    }
+		rewrite * /actuator/health
+		reverse_proxy {$API_UPSTREAM}
+	}
 
 	# Everything else goes to the frontend: Nginx serves the files and falls
 	# back to index.html for routes like /products/42.
