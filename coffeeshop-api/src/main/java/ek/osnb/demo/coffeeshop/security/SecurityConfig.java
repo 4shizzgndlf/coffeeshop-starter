@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -24,7 +25,11 @@ class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/register", "/api/login", "/api/products/**", "/api/categories/**", "/api/carts/**").permitAll()
                         .requestMatchers("/api/staff/**").hasRole("STAFF")
-                        .requestMatchers("/api/me", "/api/customers/me/**", "/api/orders/**", "/api/assistant/**").authenticated()
+                        .requestMatchers("/api/me", "/api/assistant/**").authenticated()
+                        .requestMatchers("/api/customers/me/**").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/ship").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/*").hasAnyRole("CUSTOMER", "STAFF")
+                        .requestMatchers("/api/orders/**").hasRole("CUSTOMER")
                         .anyRequest().permitAll())
                 .formLogin(form -> form
                         .loginProcessingUrl("/api/login")

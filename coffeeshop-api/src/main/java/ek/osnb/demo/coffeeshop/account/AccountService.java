@@ -28,6 +28,17 @@ class AccountService implements AccountApi {
         repository.save(Account.customer(email, passwordEncoder.encode(request.password())));
     }
 
+    void createStaffIfMissing(String email, String password) {
+        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+            return;
+        }
+
+        String normalizedEmail = email.trim().toLowerCase();
+        if (!repository.existsByEmail(normalizedEmail)) {
+            repository.save(Account.staff(normalizedEmail, passwordEncoder.encode(password)));
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Optional<AccountInfo> findByEmail(String email) {

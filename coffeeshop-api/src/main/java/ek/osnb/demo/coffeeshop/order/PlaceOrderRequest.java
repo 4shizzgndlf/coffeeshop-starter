@@ -2,13 +2,16 @@ package ek.osnb.demo.coffeeshop.order;
 
 import jakarta.validation.constraints.NotNull;
 
-// Ids only: the order looks up the customer, the cart and the products itself
+// The controller ignores customerId and gets the customer from the authenticated session.
+// It remains here only for package-local legacy service tests while the old tests are migrated.
 record PlaceOrderRequest(
 
-        @NotNull
         Long customerId,
 
         @NotNull
         Long cartId
 ) {
+    PlaceOrderRequest(Long cartId) {
+        this(null, cartId);
+    }
 }

@@ -68,6 +68,24 @@ class CustomerService implements CustomerApi {
         return CustomerMapper.toResponse(customer);
     }
 
+    @Transactional(readOnly = true)
+    MyCustomerResponse getMyProfile(String email) {
+        Customer customer = repository.findByEmail(Customer.normalizeEmail(email))
+                .orElseThrow(() -> new NotFoundException("Customer profile not found"));
+        return MyCustomerResponse.from(customer);
+    }
+
+    MyCustomerResponse saveMyProfile(String email, MyCustomerRequest request) {
+        String normalizedEmail = Customer.normalizeEmail(email);
+        Customer customer = repository.findByEmail(normalizedEmail)
+                .orElseGet(() -> Customer.create(
+                        request.name(), normalizedEmail, request.street(), request.postalCode(), request.city()));
+
+        customer.updateDetails(
+                request.name(), normalizedEmail, request.street(), request.postalCode(), request.city());
+        return MyCustomerResponse.from(repository.save(customer));
+    }
+
     // ---------- CustomerApi: used by other features ----------
 
     @Override

@@ -48,6 +48,10 @@ class Account {
         return new Account(email, passwordHash, Set.of(Role.CUSTOMER));
     }
 
+    static Account staff(String email, String passwordHash) {
+        return new Account(email, passwordHash, Set.of(Role.STAFF));
+    }
+
     String getEmail() {
         return email;
     }

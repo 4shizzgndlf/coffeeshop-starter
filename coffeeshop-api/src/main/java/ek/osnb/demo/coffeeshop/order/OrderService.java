@@ -56,8 +56,8 @@ class OrderService implements OrderApi {
     // Everything in here happens in one transaction: if any step fails (e.g. one
     // product is out of stock), nothing is saved - no stock is taken, no order is
     // created and the cart keeps its items.
-    OrderResponse placeOrder(PlaceOrderRequest request) {
-        CustomerInfo customer = customers.getCustomer(request.customerId());
+    OrderResponse placeOrder(Long customerId, PlaceOrderRequest request) {
+        CustomerInfo customer = customers.getCustomer(customerId);
         CartInfo cart = carts.getCart(request.cartId());
 
         if (cart.isEmpty()) {
@@ -100,6 +100,12 @@ class OrderService implements OrderApi {
         return OrderMapper.toResponse(order);
     }
 
+    // Kept for the existing package-local service tests. Web requests always use
+    // placeOrder(customerId, request), where the controller obtains customerId from the session.
+    OrderResponse placeOrder(PlaceOrderRequest request) {
+        return placeOrder(request.customerId(), request);
+    }
+
     @Transactional(readOnly = true)
     List<OrderSummaryResponse> findByCustomer(Long customerId) {
         // 404 for an unknown customer instead of an empty list
@@ -115,12 +121,24 @@ class OrderService implements OrderApi {
     }
 
     @Transactional(readOnly = true)
+    List<OrderSummaryResponse> findAll() {
+        return repository.findAllByOrderByPlacedAtDesc().stream()
+                .map(OrderMapper::toSummary)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     OrderResponse findById(Long id) {
         return OrderMapper.toResponse(findOrder(id));
     }
 
-    OrderResponse cancel(Long id) {
-        Order order = findOrder(id);
+    @Transactional(readOnly = true)
+    OrderResponse findByIdForCustomer(Long customerId, Long id) {
+        return OrderMapper.toResponse(findOrderForCustomer(customerId, id));
+    }
+
+    OrderResponse cancel(Long customerId, Long id) {
+        Order order = findOrderForCustomer(customerId, id);
         order.cancel();
 
         // The items go back on the shelf
@@ -128,6 +146,16 @@ class OrderService implements OrderApi {
             catalog.releaseStock(line.getProductId(), line.getQuantity());
         }
 
+        return OrderMapper.toResponse(order);
+    }
+
+    // Kept for package-local legacy tests. The controller always calls the owner-checked overload.
+    OrderResponse cancel(Long id) {
+        Order order = findOrder(id);
+        order.cancel();
+        for (OrderLine line : order.getLines()) {
+            catalog.releaseStock(line.getProductId(), line.getQuantity());
+        }
         return OrderMapper.toResponse(order);
     }
 
@@ -174,5 +202,10 @@ class OrderService implements OrderApi {
         }
 
         return result.get();
+    }
+
+    private Order findOrderForCustomer(Long customerId, Long orderId) {
+        return repository.findByIdAndCustomerId(orderId, customerId)
+                .orElseThrow(() -> new NotFoundException("Order not found: " + orderId));
     }
 }
